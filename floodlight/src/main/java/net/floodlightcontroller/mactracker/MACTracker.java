@@ -1,6 +1,7 @@
 package net.floodlightcontroller.mactracker;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 
 import org.json.JSONException;
@@ -31,8 +32,8 @@ import jsonreader.JsonReader;
 public class MACTracker implements IOFMessageListener, IFloodlightModule {
 	protected IFloodlightProviderService floodlightProvider;
 	protected Set<Long> macAddresses;
+	protected Set<String> serversURL;
 	protected static Logger logger;
-	protected static String serverURL;
 	
 	@Override
 	public String getName(){
@@ -75,7 +76,8 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
 		floodlightProvider = context.getServiceImpl(IFloodlightProviderService.class);
 	    macAddresses = new ConcurrentSkipListSet<Long>();
 	    logger = LoggerFactory.getLogger(MACTracker.class);
-	    serverURL = "http://127.0.0.1:8080/devices/";
+		serversURL = new HashSet<String>();
+		serversURL.add("http://127.0.0.1:8080/devices/");
 	}
 
 	@Override
@@ -85,25 +87,27 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
 
 	@Override
 	public net.floodlightcontroller.core.IListener.Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
-		 Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
-	     Long sourceMACHash = eth.getSourceMACAddress().getLong();
-	     if (!macAddresses.contains(sourceMACHash)){
-	    	 macAddresses.add(sourceMACHash);
-	    	 try{
-	    		 String url = serverURL.concat(eth.getSourceMACAddress().toString().toLowerCase());
-	    		 logger.info("URL is {}", url);
-	    		 JSONObject json = JsonReader.readJsonFromUrl(url);
-	    		 logger.info("json is {}", json.toString());	    		 
-	    	 }catch (IOException e){
-				e.printStackTrace();
-	    	 }catch (JSONException e){
-				e.printStackTrace();
-	    	 }
-	         logger.info("MAC Address: {} seen on switch: {}",
+		Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
+	    Long sourceMACHash = eth.getSourceMACAddress().getLong();
+	    if(!macAddresses.contains(sourceMACHash)){
+	    	macAddresses.add(sourceMACHash);
+	    	logger.info("MAC is {}", sourceMACHash);
+	    	for(String serverURL : serversURL){
+	    		try{
+		    		String url = serverURL.concat(eth.getSourceMACAddress().toString());
+		    		JSONObject json = JsonReader.readJsonFromUrl(url);
+		    		logger.info("json is {}", json.toString());	    		 
+		    	}catch (IOException e){
+		    		logger.info("IOException on {}", serverURL);
+		    	}catch (JSONException e){
+		    		logger.info("JSONException on {}", serverURL);
+		    	}
+	    	}
+	   	        logger.info("MAC Address: {} seen on switch: {}",
 	                    eth.getSourceMACAddress().toString(),
 	                    sw.getId().toString());
 	        }
-	     return Command.CONTINUE;
+	    return Command.CONTINUE;
 	}
 
 }
