@@ -8,6 +8,7 @@ cp -R mininet/custom Aux_Code/mininet/
 echo "Done copying."
 echo "Pushing to git."
 cd Aux_Code
+git add .
 git commit -a
 git push
 echo "Done."
