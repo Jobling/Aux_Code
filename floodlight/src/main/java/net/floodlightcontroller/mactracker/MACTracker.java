@@ -1,6 +1,7 @@
 package net.floodlightcontroller.mactracker;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
@@ -29,7 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import jsonreader.JsonReader;
 
-public class MACTracker implements IOFMessageListener, IFloodlightModule {
+public class MACTracker implements IFloodlightModule, IMACTrackerService, IOFMessageListener{
 	protected IFloodlightProviderService floodlightProvider;
 	protected Set<Long> macAddresses;
 	protected Set<String> serversURL;
@@ -53,15 +54,17 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
 	}
 
 	@Override
-	public Collection<Class<? extends IFloodlightService>> getModuleServices() {
-        // TODO Auto-generated method stub
-        return null;
+	public Collection<Class<? extends IFloodlightService>> getModuleServices(){
+		Collection<Class<? extends IFloodlightService>> l = new ArrayList<Class<? extends IFloodlightService>>();
+		l.add(IMACTrackerService.class);
+        return l;
 	}
 
 	@Override
 	public Map<Class<? extends IFloodlightService>, IFloodlightService> getServiceImpls() {
-		// TODO Auto-generated method stub
-		return null;
+		Map<Class<? extends IFloodlightService>, IFloodlightService> m = new HashMap<Class<? extends IFloodlightService>, IFloodlightService>();
+		m.put(IMACTrackerService.class, this);
+		return m;
 	}
 
 	@Override
@@ -108,6 +111,12 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
 	                    sw.getId().toString());
 	        }
 	    return Command.CONTINUE;
+	}
+
+	@Override
+	public boolean putServerURL(String newURL){
+		serversURL.add(newURL);
+		return true;
 	}
 
 }
