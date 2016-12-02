@@ -91,6 +91,7 @@ public class MACTracker implements IFloodlightModule, IMACTrackerService, IOFMes
 	@Override
 	public void startUp(FloodlightModuleContext context) throws FloodlightModuleException {
 		floodlightProvider.addOFMessageListener(OFType.PACKET_IN, this);
+		restApi.addRestletRoutable(new MACTrackerWebRoutable());
 	}
 
 	@Override

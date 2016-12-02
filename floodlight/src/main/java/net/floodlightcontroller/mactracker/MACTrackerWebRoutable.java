@@ -10,8 +10,9 @@ public class MACTrackerWebRoutable implements RestletRoutable{
 	@Override
 	public Restlet getRestlet(Context context) {
 		Router router = new Router(context);
+		router.attach("/newURL", MACTrackerResource.class);
 		router.attach("/newURL/{ip}/{port}", MACTrackerResource.class);
-		return null;
+		return router;
 	}
 
 	@Override
