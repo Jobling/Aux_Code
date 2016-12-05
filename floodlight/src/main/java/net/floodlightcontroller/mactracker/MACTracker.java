@@ -130,4 +130,8 @@ public class MACTracker implements IFloodlightModule, IMACTrackerService, IOFMes
 		return true;
 	}
 
+	@Override
+	public Set<String> getServers(){
+		return serversURL;
+	}
 }
