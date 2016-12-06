@@ -85,7 +85,7 @@ public class MACTracker implements IFloodlightModule, IMACTrackerService, IOFMes
 		macAddresses = new ConcurrentSkipListSet<Long>();
 	    logger = LoggerFactory.getLogger(MACTracker.class);
 		serversURL = new HashSet<String>();
-		serversURL.add("http://127.0.0.1:8080/devices/");
+		// serversURL.add("http://127.0.0.1:8080/devices/");
 	}
 
 	@Override
@@ -124,9 +124,17 @@ public class MACTracker implements IFloodlightModule, IMACTrackerService, IOFMes
 	}
 
 	@Override
-	public boolean putServerURL(String newURL){
-		serversURL.add(newURL);
-		logger.info("Added url {}", newURL);
+	public boolean putServerURL(String newJsonURL){
+		String serverURL;
+		try {
+			serverURL = JsonReader.getServerURL(newJsonURL);
+			serverURL += "/devices/";
+			serversURL.add(serverURL);
+			logger.info("Added url {}", serverURL);
+		} catch (JSONException e){
+			logger.info("JSONException reading {}", newJsonURL);
+			return false;
+		}
 		return true;
 	}
 

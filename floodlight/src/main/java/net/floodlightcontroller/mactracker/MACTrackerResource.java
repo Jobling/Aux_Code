@@ -13,14 +13,17 @@ public class MACTrackerResource extends ServerResource{
 	
 	@Get
 	public String getServers(){
+		log.info("Received GET request.");
 		IMACTrackerService mactrack = (IMACTrackerService) getContext().getAttributes().get(IMACTrackerService.class.getCanonicalName());
 		Set<String> servers = mactrack.getServers();
 		return servers.toString();
 	}
 	
 	@Put("json")
-	public String putServer(String clientURL){
-		log.info("Received PUT request from {}:{}", getClientInfo().getAddress(), getClientInfo().getPort());
-		return "Hello";
+	public String putServer(String clientJSON){
+		log.info("Received PUT request.");
+		IMACTrackerService mactrack = (IMACTrackerService) getContext().getAttributes().get(IMACTrackerService.class.getCanonicalName());
+		if(mactrack.putServerURL(clientJSON)) return "OK";
+		else return "Something went wrong.";
 	}
 }

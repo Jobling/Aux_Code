@@ -32,4 +32,11 @@ public class JsonReader {
 			is.close();
 		}
 	}
+
+	public static String getServerURL(String JsonINFO) throws JSONException{
+		String ServerURL;
+		JSONObject json = new JSONObject(JsonINFO);
+		ServerURL = "http://" + json.getString("hostname") + ":" + json.getString("port");
+		return ServerURL;
+	}
 }
