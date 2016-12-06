@@ -1,6 +1,6 @@
 """Custom topology
 
-Four switches with seven hosts
+Four switches with eight hosts
 
    switch1 -- switch2 -- switch3 -- switch4 -- switch1
     /   \      /   \      /   \      /   \
