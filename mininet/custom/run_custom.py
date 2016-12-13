@@ -5,10 +5,13 @@ from mininet.node import RemoteController
 from mininet.net import Mininet
 from mininet.log import setLogLevel, info
 from mininet.cli import CLI
+from mininet.clean import cleanup
+
+import socket
 
 class FloodlightController(RemoteController):
-    def __init__(self, name, **kwargs):
-        RemoteController.__init__(self, name, ip='127.0.0.1', port=6653, **kwargs)
+    def __init__(self, name, ip='127.0.0.1', port=6653, **kwargs):
+        RemoteController.__init__(self, name, ip, port, **kwargs)
 
 class SimpleTopology(Topo):
     ''' Single switch connected to n hosts '''
@@ -25,18 +28,23 @@ class SimpleTopology(Topo):
             # Add links
             self.addLink(host, switch)
 
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(('10.255.255.255', 0))
+        ip = s.getsockname()[0]
+    except:
+        ip = '127.0.0.1'
+    finally:
+        s.close()
+    return ip
+
 def run():
     ''' Method used to configure network '''
     # Create network
-    net = Mininet()
-
-    # Create Topology
-    net.buildFromTopo(SimpleTopology())
-    # Expect remote controller
-    net.addController(FloodlightController('c0')
+    net = Mininet(topo=SimpleTopology(), controller=FloodlightController(name='floodlight', ip=CONTROLLER_IP), autoSetMacs=True)
     # Add NAT connectivity
     net.addNAT().configDefault()
-
     # Start Network
     net.start()
     
@@ -45,8 +53,14 @@ def run():
     
     # Shutdown network
     net.stop() 
+    # Cleanup
+    cleanup()
 
 if __name__ == '__main__':
+    global CONTROLLER_IP, CONTROLLER_PORT
+    CONTROLLER_IP = get_ip()
+    CONTROLLER_PORT = '5000'
+    
     setLogLevel('info')
     run()
     
