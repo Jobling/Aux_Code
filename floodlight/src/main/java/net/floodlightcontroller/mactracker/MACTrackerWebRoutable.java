@@ -5,12 +5,14 @@ import org.restlet.Restlet;
 import org.restlet.routing.Router;
 
 import net.floodlightcontroller.restserver.RestletRoutable;
+import net.floodlightcontroller.virtualnetwork.NoOp;
 
 public class MACTrackerWebRoutable implements RestletRoutable{
 	@Override
 	public Restlet getRestlet(Context context) {
 		Router router = new Router(context);
 		router.attach("/servers", MACTrackerResource.class);
+		router.attachDefault(NoOp.class);
 		return router;
 	}
 

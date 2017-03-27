@@ -2,6 +2,7 @@
 
 from mininet.topo import Topo
 from mininet.node import RemoteController
+from mininet.link import Intf
 from mininet.net import Mininet
 from mininet.log import setLogLevel, info
 from mininet.cli import CLI
@@ -21,7 +22,7 @@ class SimpleTopology(Topo):
 
         # Add switch
         switch = self.addSwitch('s1')
-
+        
         for h in range(n):
             # Add hosts
             host = self.addHost('IoTD%s' % (h + 1))
@@ -43,20 +44,22 @@ def run():
     ''' Method used to configure network '''
     # Create network
     net = Mininet(topo=SimpleTopology(4), controller=FloodlightController(name='floodlight', ip=get_ip()), autoSetMacs=True)
-    # Add NAT connectivity
-    net.addNAT().configDefault()
 
     # Start Network
     net.start()
     
-    nat = net.get('nat0')
-    print "*** NAT with mac address %s and ip address %s." % (nat.MAC(), nat.IP())
+    info('*** Attaching interface <ens33> on switch\n')
+    net.get('s1').attach('ens33')
+    
+    # Start dhcclient on hosts
+    for host in net.hosts:
+        host.cmdPrint('dhclient ' + host.defaultIntf().name)
     
     # Deploy interactive client
     CLI(net)
     
     # Shutdown network
-    net.stop() 
+    net.stop()
     # Cleanup
     cleanup()
 

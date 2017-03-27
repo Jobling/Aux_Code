@@ -17,7 +17,7 @@ import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.core.module.FloodlightModuleException;
 import net.floodlightcontroller.core.module.IFloodlightModule;
 import net.floodlightcontroller.core.module.IFloodlightService;
-
+import net.floodlightcontroller.mactracker.MACTrackerResource.serverURL;
 import net.floodlightcontroller.core.IFloodlightProviderService;
 
 import java.io.IOException;
@@ -29,6 +29,11 @@ import net.floodlightcontroller.restserver.IRestApiService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.MappingJsonFactory;
 
 import jsonreader.JsonReader;
 
@@ -93,7 +98,7 @@ public class MACTracker implements IFloodlightModule, IMACTrackerService, IOFMes
 		floodlightProvider.addOFMessageListener(OFType.PACKET_IN, this);
 		restApi.addRestletRoutable(new MACTrackerWebRoutable());
 	}
-
+	
 	@Override
 	public net.floodlightcontroller.core.IListener.Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
 		Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
@@ -124,22 +129,56 @@ public class MACTracker implements IFloodlightModule, IMACTrackerService, IOFMes
 	}
 
 	@Override
-	public boolean putServerURL(String newJsonURL){
+	public boolean putServerURL(serverURL server){
 		String serverURL;
-		try {
-			serverURL = JsonReader.getServerURL(newJsonURL);
-			serverURL += "/devices/";
+		if(server.hostname != null && server.port != null){
+			serverURL = "http://" + server.hostname + ":" + server.port + "/devices/";
 			serversURL.add(serverURL);
 			logger.info("Added url {}", serverURL);
-		} catch (JSONException e){
-			logger.info("JSONException reading {}", newJsonURL);
+			return true;
+		}else{
 			return false;
 		}
-		return true;
 	}
 
 	@Override
 	public Set<String> getServers(){
 		return serversURL;
 	}
+	
+    protected void jsonToMACInfo(String json, serverURL url) throws IOException {
+        MappingJsonFactory f = new MappingJsonFactory();
+        JsonParser jp;
+        
+        try {
+            jp = f.createParser(json);
+        } catch (JsonParseException e) {
+            throw new IOException(e);
+        }
+        
+        jp.nextToken();
+        if (jp.getCurrentToken() != JsonToken.START_OBJECT) {
+            throw new IOException("Expected START_OBJECT");
+        }
+        
+        while (jp.nextToken() != JsonToken.END_OBJECT) {
+            if (jp.getCurrentToken() != JsonToken.FIELD_NAME) {
+                throw new IOException("Expected FIELD_NAME");
+            }
+            
+            String n = jp.getCurrentName();
+            jp.nextToken();
+            
+            if(n.equals("hostname"))
+            	url.hostname = jp.getText();
+            else if (n.equals("port"))
+            	url.port = jp.getText();
+            else{ 
+            	logger.warn("Unrecognized field {} in " +
+            		"parsing network definition", 
+            		jp.getText());
+            }
+        }
+        jp.close();
+    }
 }
