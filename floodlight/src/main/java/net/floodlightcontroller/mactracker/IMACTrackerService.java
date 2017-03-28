@@ -2,7 +2,6 @@ package net.floodlightcontroller.mactracker;
 
 import java.util.Set;
 import net.floodlightcontroller.core.module.IFloodlightService;
-import net.floodlightcontroller.mactracker.MACTrackerResource.serverURL;
 
 public interface IMACTrackerService extends IFloodlightService{
     /**
@@ -18,5 +17,5 @@ public interface IMACTrackerService extends IFloodlightService{
      * @param server The url that is listening for device query.
      * @return boolean
      */
-	public boolean putServerURL(serverURL server);
+	public boolean putServerURL(ServerURL server);
 }

@@ -18,12 +18,7 @@ import com.fasterxml.jackson.databind.MappingJsonFactory;
 public class MACTrackerResource extends ServerResource{
 	protected static Logger log = LoggerFactory.getLogger(MACTrackerResource.class);
 	
-    public class serverURL{
-        public String hostname = null;
-        public String port = null;
-    }
-	
-    protected void jsonToServerURL(String json, serverURL url) throws IOException {
+    protected void jsonToServerURL(String json, ServerURL url) throws IOException {
         MappingJsonFactory f = new MappingJsonFactory();
         JsonParser jp;
         
@@ -70,7 +65,7 @@ public class MACTrackerResource extends ServerResource{
 	@Put("json")
 	public String putServer(String clientJSON){
 		log.info("Received PUT request.");
-		serverURL server = new serverURL();
+		ServerURL server = new ServerURL();
 		try{
 			jsonToServerURL(clientJSON, server);
 		}catch(IOException e){

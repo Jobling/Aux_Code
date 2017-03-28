@@ -8,18 +8,19 @@ import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.projectfloodlight.openflow.protocol.OFMessage;
+import org.projectfloodlight.openflow.protocol.OFPacketIn;
 import org.projectfloodlight.openflow.protocol.OFType;
+import org.projectfloodlight.openflow.types.MacAddress;
 
 import net.floodlightcontroller.core.FloodlightContext;
 import net.floodlightcontroller.core.IOFMessageListener;
 import net.floodlightcontroller.core.IOFSwitch;
+import net.floodlightcontroller.core.IListener.Command;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.core.module.FloodlightModuleException;
 import net.floodlightcontroller.core.module.IFloodlightModule;
 import net.floodlightcontroller.core.module.IFloodlightService;
-import net.floodlightcontroller.mactracker.MACTrackerResource.serverURL;
 import net.floodlightcontroller.core.IFloodlightProviderService;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -39,7 +40,7 @@ import jsonreader.JsonReader;
 
 public class MACTracker implements IFloodlightModule, IMACTrackerService, IOFMessageListener{
 	protected IFloodlightProviderService floodlightProvider;
-	protected Set<Long> macAddresses;
+	protected Map<MacAddress, MACInfo> macToNetwork;
 	protected Set<String> serversURL;
 	protected IRestApiService restApi;
 	protected static Logger logger;
@@ -87,7 +88,7 @@ public class MACTracker implements IFloodlightModule, IMACTrackerService, IOFMes
 	public void init(FloodlightModuleContext context) throws FloodlightModuleException {
 		floodlightProvider = context.getServiceImpl(IFloodlightProviderService.class);
 	    restApi = context.getServiceImpl(IRestApiService.class);
-		macAddresses = new ConcurrentSkipListSet<Long>();
+		macToNetwork = new HashMap<MacAddress, MACInfo>();
 	    logger = LoggerFactory.getLogger(MACTracker.class);
 		serversURL = new HashSet<String>();
 		// serversURL.add("http://127.0.0.1:8080/devices/");
@@ -100,11 +101,26 @@ public class MACTracker implements IFloodlightModule, IMACTrackerService, IOFMes
 	}
 	
 	@Override
-	public net.floodlightcontroller.core.IListener.Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
+	public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
+		switch (msg.getType()) {
+		case PACKET_IN:
+			processPacketIn(sw, (OFPacketIn)msg, cntx);
+			break;
+		default:
+			logger.warn("Received unexpected message {}", msg);
+			break;
+		}
+		return Command.CONTINUE;
+	}
+	
+	protected void processPacketIn(IOFSwitch sw, OFPacketIn msg, FloodlightContext cntx) {
 		Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
-	    Long sourceMACHash = eth.getSourceMACAddress().getLong();
-	    if(!macAddresses.contains(sourceMACHash)){
-	    	logger.info("MAC is {}", sourceMACHash);
+	    MacAddress sourceMAC = eth.getSourceMACAddress();
+	    if(macToNetwork.containsKey(sourceMAC)){
+	    	logger.info(sourceMAC.toString() + " already registered.");
+	    }else{
+	    	logger.info("MAC is {}", sourceMAC.toString());
+	    	// Try to register macAddress
 	    	for(String serverURL : serversURL){
 	    		try{
 		    		// GET corresponding ip address;
@@ -113,9 +129,9 @@ public class MACTracker implements IFloodlightModule, IMACTrackerService, IOFMes
 		    		logger.info("json is {}", json.toString());
 		    		
 		    		// Add macAddress to list
-		    		macAddresses.add(sourceMACHash);
+		    		macToNetwork.put(sourceMAC, null);
 		    		logger.info("MAC Address: {} seen on switch: {}",
-		                    eth.getSourceMACAddress().toString(),
+		                    sourceMAC.toString(),
 		                    sw.getId().toString());
 		    		break;
 		    	}catch (IOException e){
@@ -125,16 +141,13 @@ public class MACTracker implements IFloodlightModule, IMACTrackerService, IOFMes
 		    	}
 	    	}
 	    }
-	    return Command.CONTINUE;
 	}
 
 	@Override
-	public boolean putServerURL(serverURL server){
-		String serverURL;
-		if(server.hostname != null && server.port != null){
-			serverURL = "http://" + server.hostname + ":" + server.port + "/devices/";
-			serversURL.add(serverURL);
-			logger.info("Added url {}", serverURL);
+	public boolean putServerURL(ServerURL server){
+		if(server.isValid()){
+			serversURL.add(server.getBaseURL());
+			logger.info("Added url {}", server.getBaseURL());
 			return true;
 		}else{
 			return false;
@@ -146,7 +159,7 @@ public class MACTracker implements IFloodlightModule, IMACTrackerService, IOFMes
 		return serversURL;
 	}
 	
-    protected void jsonToMACInfo(String json, serverURL url) throws IOException {
+    protected void jsonToMACInfo(String json, ServerURL url) throws IOException {
         MappingJsonFactory f = new MappingJsonFactory();
         JsonParser jp;
         
