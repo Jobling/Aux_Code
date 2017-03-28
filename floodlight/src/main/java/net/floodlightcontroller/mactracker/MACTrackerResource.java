@@ -58,7 +58,7 @@ public class MACTrackerResource extends ServerResource{
 	public String getServers(){
 		log.info("Received GET request.");
 		IMACTrackerService mactrack = (IMACTrackerService) getContext().getAttributes().get(IMACTrackerService.class.getCanonicalName());
-		Set<String> servers = mactrack.getServers();
+		Set<ServerURL> servers = mactrack.getServers();
 		return servers.toString();
 	}
 	

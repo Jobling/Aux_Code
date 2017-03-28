@@ -10,7 +10,7 @@ public interface IMACTrackerService extends IFloodlightService{
      * @param mac The MAC address to delete.
      * @param port The logical port the host is attached to.
      */
-	public Set<String> getServers();
+	public Set<ServerURL> getServers();
     
 	/**
      * Registers IoT Server on floodlight controller.
