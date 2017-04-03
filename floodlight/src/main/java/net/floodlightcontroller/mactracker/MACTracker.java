@@ -46,8 +46,7 @@ public class MACTracker implements IFloodlightModule, IMACTrackerService, IOFMes
 
 	@Override
 	public boolean isCallbackOrderingPostreq(OFType type, String name) {
-		// TODO Auto-generated method stub
-		return false;
+		return (type.equals(OFType.PACKET_IN) && name.equals("forwarding"));
 	}
 
 	@Override
