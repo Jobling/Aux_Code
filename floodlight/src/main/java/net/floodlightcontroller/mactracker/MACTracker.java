@@ -29,7 +29,7 @@ import net.floodlightcontroller.restserver.IRestApiService;
 public class MACTracker implements IFloodlightModule, IMACTrackerService, IOFMessageListener{
 	protected IFloodlightProviderService floodlightProvider;
 	protected Map<MacAddress, MACInfo> macToNetwork;
-	protected Set<ServerURL> serversURL;
+	protected Set<ServerInfo> serversURL;
 	protected IRestApiService restApi;
 	protected static Logger logger;
 	
@@ -40,7 +40,6 @@ public class MACTracker implements IFloodlightModule, IMACTrackerService, IOFMes
 
 	@Override
 	public boolean isCallbackOrderingPrereq(OFType type, String name) {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
@@ -77,8 +76,9 @@ public class MACTracker implements IFloodlightModule, IMACTrackerService, IOFMes
 	    restApi = context.getServiceImpl(IRestApiService.class);
 		macToNetwork = new HashMap<MacAddress, MACInfo>();
 	    logger = LoggerFactory.getLogger(MACTracker.class);
-		serversURL = new HashSet<ServerURL>();
-		// serversURL.add("http://127.0.0.1:8080/devices/");
+		serversURL = new HashSet<ServerInfo>();
+		// TODO read servers from file
+		// TODO test servers connectivity (from file)
 	}
 
 	@Override
@@ -105,17 +105,23 @@ public class MACTracker implements IFloodlightModule, IMACTrackerService, IOFMes
 	    MacAddress sourceMAC = eth.getSourceMACAddress();
 	    if(macToNetwork.containsKey(sourceMAC)){
 	    	logger.info(sourceMAC.toString() + " already registered.");
+	    	// TODO forward packets
 	    }else{
 	    	logger.info("MAC is {}", sourceMAC.toString());
 	    	// Try to register macAddress
-	    	for(ServerURL server : serversURL){
+	    	for(ServerInfo server : serversURL){
 	    		try{
 		    		// GET mac address information;
 	    			String json = server.getInfo(sourceMAC.toString());
-		    		logger.info("json is {}", json.toString());
+	    			MACInfo info = new MACInfo();
+	    			try {
+						info.setFromJSON(json);
+					} catch (IOException e) {
+						logger.error("Could not parse JSON {}", e.getMessage());
+					}
 		    		
 		    		// Add macAddress to list
-		    		macToNetwork.put(sourceMAC, null);
+		    		macToNetwork.put(sourceMAC, info);
 		    		logger.info("MAC Address: {} seen on switch: {}",
 		                    sourceMAC.toString(),
 		                    sw.getId().toString());
@@ -126,9 +132,9 @@ public class MACTracker implements IFloodlightModule, IMACTrackerService, IOFMes
 	    	}
 	    }
 	}
-
+	
 	@Override
-	public boolean putServerURL(ServerURL server){
+	public boolean putServerURL(ServerInfo server){
 		if(server.isValid()){
 			serversURL.add(server);
 			logger.info("Added server with url: {}", server.getBaseURL());
@@ -139,7 +145,12 @@ public class MACTracker implements IFloodlightModule, IMACTrackerService, IOFMes
 	}
 
 	@Override
-	public Set<ServerURL> getServers(){
+	public Set<ServerInfo> getServers(){
 		return serversURL;
+	}
+
+	@Override
+	public Map<MacAddress, MACInfo> getDevices() {
+		return macToNetwork;
 	}
 }
