@@ -3,8 +3,8 @@
 cd ~
 echo "Copying floodlight files."
 cp -R floodlight/src/main/java/net/floodlightcontroller/mactracker Aux_Code/floodlight/src/main/java/net/floodlightcontroller/
-cp -R floodlight/src/main/resources/logback.xml Aux_Code/floodlight/src/main/resources
-cp -R floodlight/src/main/resources/floodlightdefault.properties Aux_Code/floodlight/src/main/resources
+cp -R floodlight/src/main/resources/logback.xml Aux_Code/floodlight/src/main/resources/
+cp -R floodlight/src/main/resources/floodlightdefault.properties Aux_Code/floodlight/src/main/resources/
 cp -R mininet/custom Aux_Code/mininet/
 echo "Done copying."
 echo "Pushing to git."
