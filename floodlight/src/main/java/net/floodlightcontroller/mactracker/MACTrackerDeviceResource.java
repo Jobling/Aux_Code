@@ -18,11 +18,11 @@ public class MACTrackerDeviceResource extends ServerResource{
 		IMACTrackerService mactrack = (IMACTrackerService) getContext().getAttributes().get(IMACTrackerService.class.getCanonicalName());
 		Map<MacAddress, MACInfo> devices = mactrack.getDevices();
 		
-		String output = "";
+		String output = "<!DOCTYPE html>\n<html>\n<head>Devices</head>\n<body>\n";
 		for(Entry<MacAddress, MACInfo> entry : devices.entrySet()){
-			output += entry.getKey().toString() + " - " + entry.getValue().toString() + "\n";
+			output += "<p>" + entry.getKey() + " - " + entry.getValue() + "</p>\n";
 		}
-		
+		output += "</body>\n</html>";
 		return output;
 	}
 }

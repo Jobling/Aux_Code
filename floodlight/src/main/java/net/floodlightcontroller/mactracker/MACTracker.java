@@ -103,34 +103,37 @@ public class MACTracker implements IFloodlightModule, IMACTrackerService, IOFMes
 	protected void processPacketIn(IOFSwitch sw, OFPacketIn msg, FloodlightContext cntx) {
 		Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
 	    MacAddress sourceMAC = eth.getSourceMACAddress();
-	    if(macToNetwork.containsKey(sourceMAC)){
-	    	logger.info(sourceMAC.toString() + " already registered.");
-	    	// TODO forward packets
-	    }else{
+	    if(!macToNetwork.containsKey(sourceMAC)){
 	    	logger.info("MAC is {}", sourceMAC.toString());
-	    	// Try to register macAddress
-	    	for(ServerInfo server : serversURL){
-	    		try{
-		    		// GET mac address information;
-	    			String json = server.getInfo(sourceMAC.toString());
-	    			MACInfo info = new MACInfo();
-	    			try {
-						info.setFromJSON(json);
-					} catch (IOException e) {
-						logger.error("Could not parse JSON {}", e.getMessage());
-					}
-		    		
-		    		// Add macAddress to list
-		    		macToNetwork.put(sourceMAC, info);
-		    		logger.info("MAC Address: {} seen on switch: {}",
-		                    sourceMAC.toString(),
-		                    sw.getId().toString());
-		    		break;
-		    	}catch (IOException e){
-		    		logger.info("IOException on {}", server);
-		    	}
-	    	}
+	    	// Register macAddress
+	    	registerMAC(sourceMAC);
 	    }
+	    
+    	logger.info(sourceMAC.toString() + " already registered.");
+    	// TODO forward packets
+	}
+	
+	private void registerMAC(MacAddress sourceMAC){
+		for(ServerInfo server : serversURL){
+    		try{
+	    		// GET mac address information;
+    			String json = server.getInfo(sourceMAC.toString());
+    			MACInfo info = new MACInfo();
+    			try {
+					info.setFromJSON(json);
+	    			if(info.isValid()){
+	    				macToNetwork.put(sourceMAC, info);
+	    				return;
+	    			}
+				} catch (IOException e) {
+					logger.error("Could not parse JSON {}", e.getMessage());
+				}
+	    	}catch (IOException e){
+	    		logger.info("IOException on {}", server);
+	    	}
+    	}
+		
+		macToNetwork.put(sourceMAC, null);
 	}
 	
 	@Override

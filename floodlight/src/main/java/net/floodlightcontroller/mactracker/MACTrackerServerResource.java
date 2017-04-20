@@ -18,7 +18,14 @@ public class MACTrackerServerResource extends ServerResource{
 		log.info("Received GET request.");
 		IMACTrackerService mactrack = (IMACTrackerService) getContext().getAttributes().get(IMACTrackerService.class.getCanonicalName());
 		Set<ServerInfo> servers = mactrack.getServers();
-		return servers.toString();
+		
+		String output = "<!DOCTYPE html>\n<html>\n<head>Servers</head>\n<body>\n";
+		for(ServerInfo server : servers){
+			output += "<p>" + server.getBaseURL() + "</p>\n";
+		}
+		output += "</body>\n</html>";
+		
+		return output;
 	}
 	
 	@Put("json")

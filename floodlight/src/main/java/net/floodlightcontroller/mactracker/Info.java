@@ -10,24 +10,40 @@ import com.fasterxml.jackson.databind.MappingJsonFactory;
 public abstract class Info {
     protected String ip;
     protected String port;
+    protected String ipToken;
+    protected String portToken;
     
     /**
      * Constructor requires ip and port
+     * @param ipToken: JSON field for ip
+     * @param portToken: JSON field for port
      * @param ip: remote ip
      * @param port: remote port
+     * @return object with set values
      */
-    public Info(String ip, String port) {
+    public Info(String ipToken, String portToken, String ip, String port) {
+        this.ipToken = ipToken;
+        this.portToken = portToken;
         this.ip = ip;
         this.port = port;
-        return;        
+    }
+
+    /**
+     * Constructor requires ipToken and portToken
+     * @param ipToken: JSON field for ip
+     * @param portToken: JSON field for port
+     * @return JSON ready object with null values
+     */
+    public Info(String ipToken, String portToken){
+        this(ipToken, portToken, null, null);        
     }
     
     /**
-     * Constructor requires ip and port
-     * @return object with null parameters
+     * Constructor
+     * @return object with null values
      */
     public Info(){
-        this(null, null);        
+        this(null, null, null, null);        
     }
     
 	/**
@@ -58,12 +74,10 @@ public abstract class Info {
             String n = jp.getCurrentName();
             jp.nextToken();
             
-            if(n.equals("hostname"))
+            if(n.equals(this.ipToken))
             	this.ip = jp.getText();
-            else if (n.equals("port"))
+            else if (n.equals(this.portToken))
             	this.port = jp.getText();
-            else
-            	throw new IOException("Unrecognized field.");
         }
         jp.close();
     }
@@ -87,4 +101,9 @@ public abstract class Info {
     protected boolean isValid(){
     	return (this.ip != null && this.port != null); 
     }
+
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName() + " [ip=" + this.ip + ", port=" + this.port + "]";
+	}
 }

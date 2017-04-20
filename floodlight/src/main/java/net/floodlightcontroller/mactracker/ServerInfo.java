@@ -9,6 +9,25 @@ import java.net.URL;
 import java.nio.charset.Charset;
 
 public class ServerInfo extends Info{    
+    /**
+     * Constructor
+     * @return JSON ready object with null values
+     */
+	public ServerInfo() {
+		super("hostname", "port");
+	}
+	
+    /**
+     * Constructor requires ipToken and portToken
+     * @param ip: ip of IoT Server
+     * @param port: port of IoT Server's mac address service
+     * @return JSON ready object with set values
+     */
+	public ServerInfo(String ip, String port) {
+		super("hostname", "port", ip, port);
+	}
+	
+	
     public String getBaseURL(){
     	return "http://" + this.ip + ":" + this.port + "/devices/";
     }
@@ -41,9 +60,4 @@ public class ServerInfo extends Info{
 		}
     }
 
-
-	@Override
-	public String toString() {
-		return "ServerURL [hostname=" + ip + ", port=" + port + "]";
-	}
 }
